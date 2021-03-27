@@ -1,12 +1,13 @@
 <!DOCTYPE HTML>
 <html> 
   <head> 
-    <title>Websockets Assignment</title> 
+    <title>Monke</title> 
     <meta charset="utf-8" /> 
     <meta content='width=device-width; height=device-height; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;' name='viewport' />
     <meta name="viewport" content="width=device-width" />
     <meta name="license" content="
-        Copyright 2013 Google, Abram Hindle
+        Copyright 2013 Google, Abram Hindle,
+        2020 Leah Copeland
         
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
@@ -22,9 +23,15 @@
     "/>
     <script src="json2.js"></script>
   </head> 
-  <body bgcolor="white" height="100%" width="100%"> 
-    <div id="debug"></div>
-    <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent;"></canvas> 
+  <body bgcolor="black" height="100%" width="100%"> 
+    <div id="debug" style ="display: none"></div>
+    <div>
+        <h1 style = "color:mediumslateblue; font-size: x-large; text-align: center;">Oh look, Gorillas :-)</h1>
+        <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent;"></canvas> 
+        <button style="position: absolute; top:10px; left: 0.5em; bottom: 5px; width: 5em; height: 3em; background-color: mediumslateblue;" onclick="clearCanvas()">New Gorillas</button>
+        <button style="position: absolute; top:10px; left: 5.5em; bottom: 5px; width: 5em; height: 3em;" onclick="Banana()">Give a Gift</button>
+        <button style="position: absolute; top:10px; left: 10.5em; bottom: 5px; width: 6em; height: 3em;" onclick="Sunglasses()">Sunglasses</button>
+    </div>
 
     <script>
       // Fix me
@@ -35,6 +42,11 @@ var W = canvas.width  = window.innerWidth-6;
 var H = canvas.height = window.innerHeight-50;
 var wscounter = 0;
 var socket;
+
+var background_name = 'gorillas.jpg'; //default
+var item = 'banana.png'; //default
+
+window.onload = renderFrame;
 
 function debug(str) {
     var debugDiv = document.getElementById('debug');
@@ -47,15 +59,25 @@ world = {};
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
     with(context) {
+        var imgObj = new Image();
+        imgObj.src = 'images/' + item;
+        
         beginPath();                
-        lineWidth = 3;
-        var x = entity["x"];
-        var y = entity["y"];
-        //moveTo(x,y);
-        fillStyle = entity["colour"];
-        strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        //lineWidth = 3;
+        try{
+            var x = entity["x"];
+            var y = entity["y"];
+        }catch(e){
+            return
+        }
+            
+        drawImage(
+            imgObj, 
+            x - imgObj.width / 8, 
+            y - imgObj.height / 8, 
+            imgObj.width/4, imgObj.height/4);
+        
+        closePath();                          
     }
 }
 
@@ -71,19 +93,91 @@ function prepEntity(entity) {
 
 function clearFrame() {
     with(context) {
-	moveTo(0,0);
-	fillStyle = "#000";
-	fillRect(0,0,W,H);
+	    moveTo(0,0);
+    
+    var background = new Image();
+    background.src = 'images/'+ background_name; 
+    drawImage(background, 0, 0,W,H);
     }
-
 }
+function Banana(){
+    item = 'banana.png'
+}
+function Sunglasses(){
+    item = "sunglasses.png"
+}
+
+/*********************************************************************/
+/* couldnt figure out proper clear - but new gorillas is too important */
+/* SRC: https://github.com/leah-is-offline/CMPUT404-assignment-ajax/blob/master/static/index.html */
+function clearCanvas(){
+  
+    sendJSONXMLHTTPRequest("/clear" , null, function(empty_world){
+        world = empty_world;
+        }
+    );
+    context.clearRect(0, 0, W, H); 
+    background_name = getBackgroundName();
+    addEntity(null,null);//lol bad
+}
+function getBackgroundName(){
+    background_options = ['gorillas.jpg','gorillas2.jpg','gorillas3.jpg','gorillas4.jpg','gorillas5.jpg','gorillas6.jpg','gorillas7.jpg','gorillas8.jpg' ]
+    min = Math.ceil(0);
+    max = Math.floor(7);
+    option = Math.floor(Math.random() * (max - min + 1) + min)
+    console.log(option)
+    return background_options[option];
+}
+function sendJSONXMLHTTPRequest(url, objects, callback) {
+    var xhr = new XMLHttpRequest(); //callback for xhr
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState==4) {
+            try{
+                if (xhr.status==200) {
+                    //XXX: parse some JSON from the request!
+                    var response = xhr.responseText;
+                    var json_data = JSON.parse(response);
+                    //XXX: Pass the data to the callback!
+                    callback(json_data)
+                }
+            } 
+            catch(e) {
+                alert('Error: ' + e.name);
+            }
+        }
+    };
+    //REFERENCE: https://webmasters.stackexchange.com/questions/31212/difference-between-the-accept-and-content-type-http-headers
+    //XXX: POST to a URL
+    var method;
+    var header;
+    var body;
+
+    if (objects){
+        method = "POST"
+        header = "Content-Type"
+        body = JSON.stringify(objects)
+    }else{
+        method = "GET"
+        header = "Accept"
+        body = null
+    }
+    // XXX: set the mimetype and the accept headers!
+    // Remember to use application/json !
+    var media_type = 'application/json'
+    // REFERENCE: https://www.w3schools.com/xml/xml_http.asp
+    xhr.open(method, url)
+    xhr.setRequestHeader(header, media_type)
+    xhr.send(body)
+}
+/*********************************************************************/
+
 
 // This actually draws the frame
 function renderFrame() {
     clearFrame();
     for (var key in world) {
         var entity = world[key];
-        drawCircle(context,prepEntity(entity));
+        drawCircle(context,entity);
     }
 }
 
@@ -125,6 +219,14 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just modified!
+    new_entity = {entity: data}
+    response = JSON.stringify(new_entity)
+    //SRC: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+    if (socket.readyState == 2 || socket.readyState == 3){
+        console.log("socket is closing/closed")
+    }else{
+        socket.send(response)
+    }
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -250,10 +352,13 @@ function update() {
 
 
 function wsSetup() {
+    //print("HOST IN wsSetup is: {h}".format(h=host)) //not python lol 
     var url = "ws://"+host+"/subscribe";   
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
+        //SRC: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/onopen
+        console.log("WebSocket is open now. hhehehehe");
     };
     socket.onerror = function(msg) {
         debug("WebSocket Error:" + msg.data);
@@ -261,7 +366,12 @@ function wsSetup() {
     socket.onmessage = function(msg) {  
         try {
             debug("WebSocket Recv:" + msg.data);
-            //XXX: TODO What are you going to do here?            
+            //XXX: TODO What are you going to do here?
+            var message = JSON.parse(msg.data);
+            for (var e in message){
+                world[e] = message[e] 
+            }drawNextFrame();
+
         } catch (e) {
             alert("socket on message: " + e);
         }
@@ -269,8 +379,6 @@ function wsSetup() {
 }
 
 wsSetup();
-
-
 
 
 // 30 frames per second
