@@ -59,3 +59,23 @@ Contributors
 * Mark Galloway
 * Abram Hindle
 * Cole Mackenzie
+
+
+REFERENCES
+========================
+
+Complete Websocket functions  
+author: Abram Hindle  
+source: https://github.com/abramhindle/WebSocketsExamples/blob/master/chat.py   
+   
+Functions taken from my Assignment4    
+author: Leah Copeland  
+source: https://github.com/leah-is-offline/CMPUT404-assignment-ajax  
+  
+Information on socket ready states  
+author: Mozilla Developers  
+source: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState  
+  
+What to do on web socket open  
+author: Mozilla Developers  
+source: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/onopen  
